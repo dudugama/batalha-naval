@@ -1,0 +1,978 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Profundeza — Batalha Naval Tática</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=Inter:wght@400;500;600;700&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --navy:#07111f;
+  --navy2:#0b1d33;
+  --navy3:#10294a;
+  --steel:#1e3a5f;
+  --ocean:#0d4f7c;
+  --wave:#1a7abf;
+  --ice:#4eb8e8;
+  --foam:#c8f1ff;
+  --white:#f0f8ff;
+  --amber:#e8a020;
+  --amber2:#f5c842;
+  --red:#e03030;
+  --red2:#ff6666;
+  --green:#2ecc71;
+  --purple:#a970ff;
+  --muted:#7ba8c4;
+  --panel:rgba(13,30,53,.9);
+  --mono:'Share Tech Mono',monospace;
+  --display:'Bebas Neue',sans-serif;
+  --body:'Inter',sans-serif;
+}
+
+html,body{min-height:100%;background:var(--navy);}
+button,select{font:inherit}
+
+#portal {
+  background:
+    radial-gradient(circle at 15% 10%, rgba(78,184,232,.13), transparent 28%),
+    radial-gradient(circle at 90% 5%, rgba(245,200,66,.09), transparent 22%),
+    linear-gradient(180deg, #07111f 0%, #0a1628 42%, #06101d 100%);
+  color: var(--white);
+  font-family: var(--body);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position:relative;
+}
+
+#portal::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(rgba(255,255,255,.025) 50%, transparent 50%);
+  background-size:100% 4px;
+  mix-blend-mode:soft-light;
+  opacity:.35;
+  z-index:5;
+}
+
+.hero {
+  border-bottom: 1px solid rgba(78,184,232,.22);
+  padding: 22px 24px 16px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::after{
+  content:'';
+  position:absolute;
+  right:-80px;top:-120px;
+  width:330px;height:330px;
+  border:1px solid rgba(78,184,232,.20);
+  border-radius:50%;
+  box-shadow:0 0 45px rgba(78,184,232,.08) inset;
+}
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.075;
+  background-image:
+    linear-gradient(#4eb8e8 1px, transparent 1px),
+    linear-gradient(90deg, #4eb8e8 1px, transparent 1px);
+  background-size: 32px 32px;
+  animation:gridDrift 22s linear infinite;
+}
+@keyframes gridDrift{from{background-position:0 0}to{background-position:64px 32px}}
+
+.hero-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 18px;
+  max-width:1180px;
+  margin:0 auto;
+}
+.logo-block{min-width:250px}
+.logo-title {
+  font-family: var(--display);
+  font-size: clamp(40px, 7vw, 68px);
+  letter-spacing: 6px;
+  color: var(--foam);
+  line-height: .9;
+  text-shadow:0 0 18px rgba(78,184,232,.22);
+}
+.logo-sub {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ice);
+  letter-spacing: 3px;
+  opacity: 0.76;
+  margin-top: 8px;
+}
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(92px,1fr));
+  gap: 10px;
+}
+.hstat {
+  background: linear-gradient(180deg,rgba(15,31,61,.95),rgba(8,19,36,.95));
+  border: 1px solid rgba(78,184,232,.20);
+  border-radius: 12px;
+  padding: 10px 14px;
+  text-align: center;
+  box-shadow:0 10px 30px rgba(0,0,0,.18);
+}
+.hstat-val {
+  font-family: var(--mono);
+  font-size: 20px;
+  color: var(--amber2);
+  line-height: 1;
+}
+.hstat-lbl {
+  font-size: 10px;
+  color: var(--ice);
+  letter-spacing: 1px;
+  opacity: 0.68;
+  margin-top: 5px;
+  white-space:nowrap;
+}
+
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 24px;
+  background: rgba(13,30,53,.76);
+  border-bottom: 1px solid rgba(78,184,232,.18);
+}
+.divider-line { flex: 1; height: 1px; background: rgba(78,184,232,.19); }
+.divider-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ice);
+  letter-spacing: 2px;
+  opacity: 0.66;
+  text-align:center;
+}
+
+.game-zone {
+  max-width:1180px;
+  margin:0 auto;
+  padding: 18px 16px 10px;
+}
+
+.command-deck{
+  display:grid;
+  grid-template-columns: 1.2fr .8fr;
+  gap:14px;
+  margin-bottom:14px;
+}
+.status-card,.intel-card{
+  background:var(--panel);
+  border:1px solid rgba(78,184,232,.22);
+  border-radius:16px;
+  padding:14px;
+  box-shadow:0 18px 45px rgba(0,0,0,.22);
+}
+.battle-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.status-pill {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  letter-spacing: 1px;
+  border: 1px solid;
+}
+.pill-player { background: rgba(13,58,92,.85); border-color: var(--wave); color: var(--foam); }
+.pill-enemy  { background: rgba(58,13,13,.85); border-color: var(--red);  color: var(--red2); }
+.pill-wait   { background: rgba(58,45,13,.85); border-color: var(--amber); color: var(--amber2); }
+.pill-win    { background: rgba(13,58,26,.85); border-color: var(--green); color: var(--green); }
+.pill-lose   { background: rgba(58,13,13,.85); border-color: var(--red);   color: var(--red2); }
+
+.score-strip {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+.score-chip {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  background: rgba(15,31,61,.8);
+  border: 1px solid rgba(78,184,232,.16);
+  border-radius: 999px;
+  padding: 6px 10px;
+}
+.score-chip b { color: var(--amber2); font-weight: 400; }
+
+.controls-grid{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+  margin-top:12px;
+}
+.control-group{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.control-label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:1px}
+.select-naval{
+  background:#0a1d34;
+  color:var(--foam);
+  border:1px solid rgba(78,184,232,.22);
+  border-radius:9px;
+  padding:8px 10px;
+  outline:none;
+  cursor:pointer;
+}
+
+.intel-card{display:grid;gap:9px;align-content:start}
+.intel-title{font-family:var(--mono);font-size:11px;letter-spacing:2px;color:var(--ice);opacity:.72}
+.intel-row{display:flex;justify-content:space-between;gap:10px;font-family:var(--mono);font-size:11px;color:var(--muted);border-top:1px solid rgba(78,184,232,.12);padding-top:8px}
+.intel-row strong{color:var(--foam);font-weight:400;text-align:right}
+
+.boards-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.board-panel {
+  background: var(--panel);
+  border: 1px solid rgba(78,184,232,.22);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow:0 18px 45px rgba(0,0,0,.22);
+  position:relative;
+  overflow:hidden;
+}
+.board-panel::before{
+  content:'';
+  position:absolute;
+  inset:auto 0 0 0;
+  height:3px;
+  background:linear-gradient(90deg, transparent, rgba(78,184,232,.46), transparent);
+  opacity:.45;
+}
+.board-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.board-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--ice);
+  opacity: 0.78;
+}
+.board-title.enemy-title { color: var(--red2); opacity: .98; }
+.board-ping {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--green);
+  box-shadow:0 0 12px var(--green);
+  animation: blink 1.4s infinite;
+}
+.board-ping.inactive { background: #445; box-shadow:none; animation: none; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+.board {
+  display: grid;
+  grid-template-columns: 22px repeat(10, minmax(22px, 1fr));
+  grid-template-rows: 22px repeat(10, minmax(22px, 1fr));
+  gap: 3px;
+  aspect-ratio: 11/11;
+  width: 100%;
+  max-height:72vh;
+}
+.bh {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: #5f8fb0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 400;
+  user-select:none;
+}
+.cell {
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  background:
+    radial-gradient(circle at 25% 20%, rgba(78,184,232,.10), transparent 42%),
+    #0d2b43;
+  border: 1px solid rgba(78,184,232,.18);
+  transition: background 0.12s, transform 0.08s, border-color .12s, box-shadow .12s;
+  position: relative;
+  min-width:0;
+  user-select:none;
+}
+.cell:hover { background:#1a4a70; border-color: var(--ice); transform: scale(1.08); box-shadow:0 0 14px rgba(78,184,232,.26); z-index:2; }
+.cell.ship { background: #1e3a5a; border-color: #2a6f9a; }
+.cell.ship::after { content:''; display:block; width:62%; height:62%; border-radius:3px; background:linear-gradient(135deg,#315f86,#173a5a); box-shadow:inset 0 0 6px rgba(255,255,255,.08); }
+.cell.hit { background: #4a0f0f; border-color: var(--red); animation:hitPulse .3s ease; }
+.cell.hit::after { content:'✕'; font-size:13px; color: var(--red2); font-weight:700; text-shadow:0 0 10px var(--red); }
+.cell.boat-part { overflow:hidden; }
+.cell.boat-part::after {
+  content: attr(data-boat);
+  width:72%;
+  height:72%;
+  border-radius:5px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:var(--mono);
+  font-size:16px;
+  font-weight:700;
+  color:#fff7d6;
+  background:linear-gradient(135deg,#8f5a24,#2e5f7f 58%,#102c43);
+  border:1px solid rgba(255,255,255,.32);
+  box-shadow:0 0 14px rgba(232,160,32,.35), inset 0 0 8px rgba(255,255,255,.16);
+  text-shadow:0 1px 0 rgba(0,0,0,.55);
+}
+.cell.boat-part[data-boat-type="h-mid"]::after { border-radius:3px; }
+.cell.boat-part[data-boat-type="v-mid"]::after { border-radius:3px; }
+.cell.boat-part[data-boat-type="h-left"]::after { clip-path:polygon(0 50%,24% 8%,100% 8%,100% 92%,24% 92%); }
+.cell.boat-part[data-boat-type="h-right"]::after { clip-path:polygon(0 8%,76% 8%,100% 50%,76% 92%,0 92%); }
+.cell.boat-part[data-boat-type="v-top"]::after { clip-path:polygon(50% 0,92% 24%,92% 100%,8% 100%,8% 24%); }
+.cell.boat-part[data-boat-type="v-bottom"]::after { clip-path:polygon(8% 0,92% 0,92% 76%,50% 100%,8% 76%); }
+.cell.sunk.boat-part::after {
+  background:linear-gradient(135deg,#c44,#642020 55%,#240909);
+  box-shadow:0 0 16px rgba(255,85,85,.45), inset 0 0 10px rgba(255,255,255,.12);
+}
+.cell.miss { background: #071723; border-color: rgba(78,184,232,.08); }
+.cell.miss::after { content:'·'; font-size:22px; color:#31597a; line-height:1; }
+.cell.sunk { background: #711111; border-color: var(--red2); animation: sunk-flash 0.55s ease; }
+.cell.sunk::after { content:'✕'; font-size:13px; color:#fff; font-weight:700; }
+.cell.scan { background:#163b26!important; border-color:var(--green)!important; box-shadow:0 0 18px rgba(46,204,113,.28); }
+.cell.last-shot{outline:2px solid var(--amber2);outline-offset:-2px}
+.cell[data-disabled] { cursor:default; pointer-events:none; }
+@keyframes hitPulse{0%{transform:scale(.78)}60%{transform:scale(1.14)}100%{transform:scale(1)}}
+@keyframes sunk-flash { 0%{background:#fff} 100%{background:#711111} }
+
+.fleet-panel {
+  margin-top: 14px;
+  background: var(--panel);
+  border: 1px solid rgba(78,184,232,.22);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow:0 18px 45px rgba(0,0,0,.16);
+}
+.fleet-title-row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.fleet-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--ice);
+  opacity: 0.68;
+}
+.fleet-hint{font-family:var(--mono);font-size:10px;color:var(--muted);opacity:.7}
+.fleet-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ship-tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 6px 10px;
+  background: #0f2a40;
+  border: 1px solid #1e4a6a;
+  border-radius: 999px;
+  color: var(--ice);
+  transition: all 0.2s;
+}
+.ship-tag .sz { color: var(--wave); margin-left: 4px; font-size: 10px; }
+.ship-tag .hp{color:var(--amber2);margin-left:6px;font-size:10px}
+.ship-tag.afundado {
+  text-decoration: line-through;
+  opacity: 0.36;
+  border-color: var(--red);
+  color: var(--red2);
+  background: #1a0a0a;
+}
+
+.message-bar {
+  margin-top: 14px;
+  padding: 12px 16px;
+  border-radius: 13px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  border: 1px solid rgba(78,184,232,.20);
+  background: rgba(13,30,53,.88);
+  color: var(--ice);
+  min-height: 45px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.2s, border-color 0.2s;
+  box-shadow:0 12px 30px rgba(0,0,0,.15);
+}
+.message-bar::before { content: '>>'; color: #2a6a9a; margin-right: 4px; font-size: 11px; }
+.message-bar.hit   { background: rgba(38,8,8,.9); border-color: var(--red); color: var(--red2); }
+.message-bar.hit::before { color: var(--red); }
+.message-bar.miss  { background: rgba(8,15,26,.9); border-color: #1a2a3a; color: #6e9bb9; }
+.message-bar.win   { background: rgba(8,38,16,.9); border-color: var(--green); color: var(--green); }
+.message-bar.lose  { background: rgba(38,8,8,.9); border-color: var(--red); color: var(--red2); }
+.message-bar.warn  { background: rgba(40,31,8,.9); border-color: var(--amber); color: var(--amber2); }
+
+.actions-row {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap:wrap;
+}
+.btn-naval {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  padding: 9px 14px;
+  background: #0d1e35;
+  border: 1px solid #1e4a6a;
+  border-radius: 10px;
+  color: var(--ice);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform .12s;
+}
+.btn-naval:hover { background: #162d4a; border-color: var(--wave); color: var(--white); transform:translateY(-1px); }
+.btn-naval.primary { background: #0d3a5c; border-color: var(--wave); color: var(--foam); }
+.btn-naval.primary:hover { background: #1a5080; }
+.btn-naval.danger{border-color:rgba(255,102,102,.45);color:var(--red2)}
+.btn-naval[disabled]{opacity:.45;cursor:not-allowed;transform:none}
+
+.footer-bar {
+  margin-top: 20px;
+  padding: 12px 24px;
+  background: rgba(8,15,26,.95);
+  border-top: 1px solid rgba(78,184,232,.18);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.footer-copy { font-family: var(--mono); font-size: 10px; color: #436987; letter-spacing: 1px; }
+.footer-nav { display: flex; gap: 12px; flex-wrap:wrap; }
+.footer-nav button { font-family: var(--mono); font-size: 10px; color: #6c98b7; letter-spacing: 1px; background:none;border:0;cursor:pointer; }
+.footer-nav button:hover { color: var(--ice); }
+.radar-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--green); margin-right: 7px; animation: blink 1.4s infinite; vertical-align: middle; box-shadow:0 0 10px var(--green); }
+
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.62);display:none;align-items:center;justify-content:center;padding:16px;z-index:20}
+.modal-backdrop.show{display:flex}
+.modal{max-width:650px;width:100%;background:#0b1d33;border:1px solid rgba(78,184,232,.28);border-radius:18px;box-shadow:0 30px 90px rgba(0,0,0,.5);padding:20px}
+.modal h3{font-family:var(--display);font-size:34px;letter-spacing:3px;color:var(--foam);margin-bottom:8px}
+.modal p,.modal li{font-size:14px;line-height:1.55;color:#bdd8ea;margin-bottom:8px}
+.modal ul{padding-left:18px;margin:8px 0 14px}
+.modal-actions{display:flex;justify-content:flex-end;margin-top:12px}
+
+@media (max-width: 880px) {
+  .command-deck{grid-template-columns:1fr}
+  .boards-container { grid-template-columns: 1fr; }
+  .hero-stats{grid-template-columns:repeat(2,1fr);width:100%}
+}
+@media (max-width: 520px) {
+  .hero{padding:18px 14px 12px}
+  .game-zone{padding:14px 10px 8px}
+  .board-panel,.status-card,.intel-card,.fleet-panel{padding:10px;border-radius:13px}
+  .board{gap:2px;grid-template-columns:18px repeat(10, minmax(20px, 1fr));grid-template-rows:18px repeat(10, minmax(20px, 1fr));}
+  .logo-title { font-size: 38px; }
+  .score-strip{margin-left:0;width:100%}
+  .btn-naval{flex:1;min-width:145px}
+}
+</style>
+</head>
+<body>
+<div id="portal">
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Profundeza — jogo de batalha naval tático no navegador</h1>
+
+  <div class="hero">
+    <div class="hero-grid"></div>
+    <div class="hero-inner">
+      <div class="logo-block">
+        <div class="logo-title">PROFUNDEZA</div>
+        <div class="logo-sub"><span class="radar-dot"></span>TACTICAL NAVAL WARFARE · SINGLE PLAYER</div>
+      </div>
+      <div class="hero-stats">
+        <div class="hstat"><div class="hstat-val" id="gs-total">0</div><div class="hstat-lbl">PARTIDAS</div></div>
+        <div class="hstat"><div class="hstat-val" id="gs-wins">0</div><div class="hstat-lbl">VITÓRIAS</div></div>
+        <div class="hstat"><div class="hstat-val" id="gs-acc">—</div><div class="hstat-lbl">PRECISÃO</div></div>
+        <div class="hstat"><div class="hstat-val" id="gs-streak">0</div><div class="hstat-lbl">SEQUÊNCIA</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider">
+    <div class="divider-line"></div>
+    <div class="divider-label">CAMPO DE BATALHA</div>
+    <div class="divider-line"></div>
+  </div>
+
+  <main class="game-zone">
+    <section class="command-deck">
+      <div class="status-card">
+        <div class="battle-status">
+          <div class="status-pill pill-player" id="turn-pill">AGUARDANDO ATAQUE</div>
+          <div class="score-strip">
+            <div class="score-chip">SEU FOGO: <b id="phits">0</b>/17</div>
+            <div class="score-chip">INIMIGO: <b id="ehits">0</b>/17</div>
+            <div class="score-chip">DISPAROS: <b id="shots-now">0</b></div>
+          </div>
+        </div>
+        <div class="controls-grid">
+          <div class="control-group">
+            <span class="control-label">DIFICULDADE</span>
+            <select id="difficulty" class="select-naval" onchange="changeDifficulty()">
+              <option value="recruta">Recruta</option>
+              <option value="oficial" selected>Oficial</option>
+              <option value="almirante">Almirante</option>
+            </select>
+          </div>
+          <button class="btn-naval primary" onclick="initGame()">↺ NOVA BATALHA</button>
+          <button class="btn-naval" id="scan-btn" onclick="scanSector()">RADAR SETORIAL <span id="scan-count">2</span></button>
+          <button class="btn-naval" id="sound-btn" onclick="toggleSound()">SOM: ON</button>
+        </div>
+      </div>
+      <aside class="intel-card" aria-label="Informações da missão">
+        <div class="intel-title">INTELIGÊNCIA DA MISSÃO</div>
+        <div class="intel-row"><span>Objetivo</span><strong>Afundar 5 navios</strong></div>
+        <div class="intel-row"><span>Modo de acerto</span><strong>Acertou, joga novamente</strong></div>
+        <div class="intel-row"><span>Radar</span><strong>Mostra 1 setor 3×3</strong></div>
+        <div class="intel-row"><span>IA inimiga</span><strong id="ai-label">Oficial</strong></div>
+      </aside>
+    </section>
+
+    <section class="boards-container" aria-label="Tabuleiros do jogo">
+      <div class="board-panel">
+        <div class="board-header-row">
+          <div class="board-title enemy-title">ALVO INIMIGO</div>
+          <div class="board-ping" id="ping-enemy"></div>
+        </div>
+        <div class="board" id="enemy-board"></div>
+      </div>
+      <div class="board-panel">
+        <div class="board-header-row">
+          <div class="board-title">SEU TERRITÓRIO</div>
+          <div class="board-ping inactive" id="ping-my"></div>
+        </div>
+        <div class="board" id="my-board"></div>
+      </div>
+    </section>
+
+    <section class="fleet-panel">
+      <div class="fleet-title-row">
+        <div class="fleet-title">FROTA INIMIGA</div>
+        <div class="fleet-hint">Dica: use o radar quando restarem poucos espaços suspeitos.</div>
+      </div>
+      <div class="fleet-grid" id="fleet-grid"></div>
+    </section>
+
+    <div class="message-bar" id="msg-bar">Selecione uma célula no tabuleiro inimigo para atacar.</div>
+
+    <div class="actions-row">
+      <button class="btn-naval" onclick="showHelp()">COMO JOGAR</button>
+      <button class="btn-naval danger" onclick="resetStats()">ZERAR ESTATÍSTICAS</button>
+    </div>
+  </main>
+
+  <div class="footer-bar">
+    <div class="footer-copy">© PROFUNDEZA · TACTICAL SYSTEMS v3.0</div>
+    <div class="footer-nav">
+      <button onclick="showHelp()">COMO JOGAR</button>
+      <button onclick="initGame()">NOVA PARTIDA</button>
+      <button onclick="scanSector()">RADAR</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="help-modal" onclick="hideHelp(event)">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="help-title">
+    <h3 id="help-title">Como jogar</h3>
+    <p>Escolha uma coordenada no tabuleiro inimigo. Se acertar um navio, você continua jogando. Se errar, o inimigo ataca.</p>
+    <ul>
+      <li>Os navios não ficam encostados uns nos outros, nem na diagonal.</li>
+      <li>O radar setorial revela temporariamente pistas em uma área 3×3.</li>
+      <li>A dificuldade altera a inteligência e a frequência de ataques estratégicos do inimigo.</li>
+      <li>As estatísticas ficam salvas no navegador.</li>
+    </ul>
+    <div class="modal-actions"><button class="btn-naval primary" onclick="closeHelp()">ENTENDI</button></div>
+  </div>
+</div>
+
+<script>
+const COLS=['A','B','C','D','E','F','G','H','I','J'];
+const SHIP_DEFS=[
+  {name:'Porta-aviões',size:5},
+  {name:'Encouraçado',size:4},
+  {name:'Cruzador',size:3},
+  {name:'Submarino',size:3},
+  {name:'Destroyer',size:2},
+];
+const TOTAL=17;
+const SAVE_KEY='profundeza-v3-stats';
+const DIFFICULTY={
+  recruta:{label:'Recruta',chainDelay:950,smart:false,parity:false,scan:3},
+  oficial:{label:'Oficial',chainDelay:760,smart:true,parity:true,scan:2},
+  almirante:{label:'Almirante',chainDelay:560,smart:true,parity:true,scan:1}
+};
+let gs=loadStats();
+let st={};
+let soundOn=true;
+let audioCtx=null;
+
+function makeGrid(){return Array.from({length:10},()=>Array(10).fill(false));}
+function makeShipGrid(){return Array.from({length:10},()=>Array(10).fill(0));}
+function rand(n){return Math.floor(Math.random()*n)}
+function coord(r,c){return COLS[c]+(r+1)}
+function inBounds(r,c){return r>=0&&r<10&&c>=0&&c<10}
+function neighbors(r,c){return [[r-1,c],[r+1,c],[r,c-1],[r,c+1]].filter(([rr,cc])=>inBounds(rr,cc))}
+
+function loadStats(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(SAVE_KEY)||'{}');
+    return {total:0,wins:0,shots:0,hits:0,streak:0,bestStreak:0,...saved};
+  }catch(e){return {total:0,wins:0,shots:0,hits:0,streak:0,bestStreak:0};}
+}
+function saveStats(){localStorage.setItem(SAVE_KEY,JSON.stringify(gs));}
+
+function beep(type){
+  if(!soundOn)return;
+  try{
+    audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+    const osc=audioCtx.createOscillator();
+    const gain=audioCtx.createGain();
+    const now=audioCtx.currentTime;
+    const map={hit:[180,.055],miss:[90,.035],sunk:[75,.12],win:[440,.16],lose:[60,.18],scan:[260,.08]};
+    const [freq,dur]=map[type]||[160,.04];
+    osc.type=type==='win'?'triangle':'square';
+    osc.frequency.setValueAtTime(freq,now);
+    if(type==='win')osc.frequency.exponentialRampToValueAtTime(760,now+dur);
+    gain.gain.setValueAtTime(.0001,now);
+    gain.gain.exponentialRampToValueAtTime(.06,now+.01);
+    gain.gain.exponentialRampToValueAtTime(.0001,now+dur);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(now);osc.stop(now+dur+.02);
+  }catch(e){}
+}
+
+function place(grid,ships){
+  const placed=[];
+  for(const s of ships){
+    let ok=false,tries=0;
+    while(!ok&&tries<1200){
+      tries++;
+      const h=Math.random()<0.5;
+      const r=rand(h?10:10-s.size+1);
+      const c=rand(h?10-s.size+1:10);
+      let fits=true;
+      for(let i=0;i<s.size;i++){
+        const rr=h?r:r+i,cc=h?c+i:c;
+        if(grid[rr][cc]!==0){fits=false;break;}
+        for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+          const nr=rr+dr,nc=cc+dc;
+          if(inBounds(nr,nc)&&grid[nr][nc]!==0)fits=false;
+        }
+      }
+      if(fits){
+        const cells=[];
+        for(let i=0;i<s.size;i++){
+          const rr=h?r:r+i,cc=h?c+i:c;
+          grid[rr][cc]=placed.length+1;
+          cells.push([rr,cc]);
+        }
+        placed.push({...s,cells,sunk:false,hits:0});
+        ok=true;
+      }
+    }
+    if(!ok)return place(makeShipGrid(),ships);
+  }
+  return placed;
+}
+
+function buildBoard(el,grid,isEnemy){
+  el.innerHTML='';
+  el.appendChild(document.createElement('div'));
+  for(const c of COLS){const h=document.createElement('div');h.className='bh';h.textContent=c;el.appendChild(h);}
+  for(let r=0;r<10;r++){
+    const rh=document.createElement('div');rh.className='bh';rh.textContent=r+1;el.appendChild(rh);
+    for(let c=0;c<10;c++){
+      const cell=document.createElement('button');
+      cell.type='button';
+      cell.className='cell';
+      cell.setAttribute('aria-label',(isEnemy?'Atacar ':'Seu território ')+coord(r,c));
+      cell.dataset.r=r;cell.dataset.c=c;
+      if(!isEnemy&&grid[r][c]!==0)cell.classList.add('ship');
+      if(isEnemy)cell.onclick=()=>playerAttack(r,c);
+      el.appendChild(cell);
+    }
+  }
+}
+function getCell(boardEl,r,c){return boardEl.querySelectorAll('.cell')[r*10+c];}
+function clearLastShots(){document.querySelectorAll('.last-shot').forEach(el=>el.classList.remove('last-shot'));}
+function markCell(boardEl,r,c,cls){
+  const cell=getCell(boardEl,r,c);
+  cell.classList.remove('ship','scan','last-shot');
+  if(cls!=='hit'&&cls!=='sunk'){
+    cell.classList.remove('boat-part');
+    delete cell.dataset.boat;
+    delete cell.dataset.boatType;
+  }
+  cell.classList.add(cls,'last-shot');
+  cell.setAttribute('data-disabled','');
+  cell.onclick=null;
+}
+function markSunk(boardEl,ship){
+  for(const[r,c]of ship.cells){
+    const cell=getCell(boardEl,r,c);
+    paintBoatPart(boardEl,ship,r,c);
+    cell.classList.remove('hit','scan');
+    cell.classList.add('sunk');
+  }
+}
+function findShip(ships,r,c){return ships.find(s=>s.cells.some(([sr,sc])=>sr===r&&sc===c));}
+function getBoatPart(ship,r,c){
+  if(!ship)return null;
+  const cells=[...ship.cells];
+  const horizontal=cells.every(([sr])=>sr===cells[0][0]);
+  cells.sort((a,b)=>horizontal?a[1]-b[1]:a[0]-b[0]);
+  const idx=cells.findIndex(([sr,sc])=>sr===r&&sc===c);
+  if(idx<0)return null;
+  if(ship.size===1)return {type:'single',glyph:'◆',label:'navio isolado'};
+  if(horizontal){
+    if(idx===0)return {type:'h-left',glyph:'▶',label:'extremidade: o navio continua para a direita'};
+    if(idx===cells.length-1)return {type:'h-right',glyph:'◀',label:'extremidade: o navio continua para a esquerda'};
+    return {type:'h-mid',glyph:'━',label:'parte central horizontal'};
+  }
+  if(idx===0)return {type:'v-top',glyph:'▼',label:'extremidade: o navio continua para baixo'};
+  if(idx===cells.length-1)return {type:'v-bottom',glyph:'▲',label:'extremidade: o navio continua para cima'};
+  return {type:'v-mid',glyph:'┃',label:'parte central vertical'};
+}
+function paintBoatPart(boardEl,ship,r,c){
+  const part=getBoatPart(ship,r,c);
+  if(!part)return;
+  const cell=getCell(boardEl,r,c);
+  cell.classList.add('boat-part');
+  cell.dataset.boat=part.glyph;
+  cell.dataset.boatType=part.type;
+  cell.title=coord(r,c)+' — '+part.label;
+  cell.setAttribute('aria-label',coord(r,c)+' — '+part.label);
+}
+function checkSunk(ships,hits,r,c){
+  const s=findShip(ships,r,c);
+  if(!s)return null;
+  s.hits=s.cells.filter(([sr,sc])=>hits[sr][sc]).length;
+  if(s.cells.every(([sr,sc])=>hits[sr][sc])){s.sunk=true;return s;}
+  return null;
+}
+function setMsg(txt,cls=''){
+  const el=document.getElementById('msg-bar');
+  el.textContent=txt;
+  el.className='message-bar'+(cls?' '+cls:'');
+}
+function updateFleet(){
+  const el=document.getElementById('fleet-grid');
+  el.innerHTML='';
+  for(const s of st.eShips){
+    const t=document.createElement('div');
+    t.className='ship-tag'+(s.sunk?' afundado':'');
+    const hits=s.cells.filter(([r,c])=>st.eHits[r][c]).length;
+    t.innerHTML=s.name+'<span class="sz">×'+s.size+'</span><span class="hp">'+hits+'/'+s.size+'</span>';
+    el.appendChild(t);
+  }
+}
+function updateStats(){
+  document.getElementById('gs-total').textContent=gs.total;
+  document.getElementById('gs-wins').textContent=gs.wins;
+  document.getElementById('gs-streak').textContent=gs.streak;
+  document.getElementById('gs-acc').textContent=gs.shots>0?Math.round(gs.hits/gs.shots*100)+'%':'—';
+  document.getElementById('shots-now').textContent=st.shots||0;
+  saveStats();
+}
+function setTurnUI(who){
+  const pill=document.getElementById('turn-pill');
+  const pe=document.getElementById('ping-enemy');
+  const pm=document.getElementById('ping-my');
+  if(who==='player'){
+    pill.textContent='AGUARDANDO ATAQUE'; pill.className='status-pill pill-player'; pe.className='board-ping'; pm.className='board-ping inactive';
+  } else if(who==='enemy'){
+    pill.textContent='INIMIGO ATACANDO...'; pill.className='status-pill pill-enemy'; pe.className='board-ping inactive'; pm.className='board-ping';
+  } else if(who==='win'){
+    pill.textContent='VITÓRIA CONFIRMADA'; pill.className='status-pill pill-win'; pe.className='board-ping inactive'; pm.className='board-ping inactive';
+  } else if(who==='lose'){
+    pill.textContent='FROTA DESTRUÍDA'; pill.className='status-pill pill-lose'; pe.className='board-ping inactive'; pm.className='board-ping inactive';
+  }
+}
+
+function playerAttack(r,c){
+  if(st.over||st.turn!=='player')return;
+  if(st.eHits[r][c])return;
+  clearLastShots();
+  st.eHits[r][c]=true;
+  st.shots++; gs.shots++;
+  const hit=st.eGrid[r][c]!==0;
+  if(hit){
+    beep('hit');
+    gs.hits++; st.pScore++;
+    document.getElementById('phits').textContent=st.pScore;
+    markCell(document.getElementById('enemy-board'),r,c,'hit');
+    const hitShip=findShip(st.eShips,r,c);
+    paintBoatPart(document.getElementById('enemy-board'),hitShip,r,c);
+    const sunk=checkSunk(st.eShips,st.eHits,r,c);
+    updateFleet(); updateStats();
+    if(sunk){
+      beep('sunk'); markSunk(document.getElementById('enemy-board'),sunk);
+      if(st.pScore>=TOTAL){finishGame(true);return;}
+      setMsg('AFUNDADO: '+sunk.name+'. Bom trabalho, comandante. Continue atacando.','hit');
+    } else {
+      setMsg('ACERTO! Coordenada '+coord(r,c)+' atingida. Você ganhou novo disparo.','hit');
+    }
+  } else {
+    beep('miss');
+    markCell(document.getElementById('enemy-board'),r,c,'miss');
+    updateStats();
+    setMsg('FALHA. Coordenada '+coord(r,c)+' — água. Turno do inimigo.','miss');
+    st.turn='enemy'; setTurnUI('enemy');
+    setTimeout(enemyAttack,DIFFICULTY[st.difficulty].chainDelay);
+  }
+}
+
+function candidateParityCells(){
+  const cells=[];
+  for(let r=0;r<10;r++)for(let c=0;c<10;c++){
+    if(!st.myHits[r][c]&&((r+c)%2===0))cells.push([r,c]);
+  }
+  return cells.length?cells:unknownCells();
+}
+function unknownCells(){
+  const cells=[];
+  for(let r=0;r<10;r++)for(let c=0;c<10;c++)if(!st.myHits[r][c])cells.push([r,c]);
+  return cells;
+}
+function pushTargetsFromHit(r,c){
+  const ns=neighbors(r,c).filter(([nr,nc])=>!st.myHits[nr][nc]);
+  ns.sort(()=>Math.random()-.5);
+  for(const cell of ns)st.aiQ.push(cell);
+}
+function chooseEnemyShot(){
+  const cfg=DIFFICULTY[st.difficulty];
+  let r,c;
+  while(st.aiQ.length){
+    [r,c]=st.aiQ.shift();
+    if(!st.myHits[r][c])return [r,c];
+  }
+  const pool=(cfg.parity&&Math.random()<.82)?candidateParityCells():unknownCells();
+  return pool[rand(pool.length)];
+}
+function enemyAttack(){
+  if(st.over)return;
+  clearLastShots();
+  const [r,c]=chooseEnemyShot();
+  st.myHits[r][c]=true;
+  const hit=st.myGrid[r][c]!==0;
+  if(hit){
+    beep('hit');
+    st.eScore++;
+    document.getElementById('ehits').textContent=st.eScore;
+    markCell(document.getElementById('my-board'),r,c,'hit');
+    const hitShip=findShip(st.myShips,r,c);
+    paintBoatPart(document.getElementById('my-board'),hitShip,r,c);
+    if(DIFFICULTY[st.difficulty].smart)pushTargetsFromHit(r,c);
+    const sunk=checkSunk(st.myShips,st.myHits,r,c);
+    if(sunk){
+      beep('sunk'); markSunk(document.getElementById('my-board'),sunk); st.aiQ=[];
+      setMsg('ALERTA: inimigo afundou seu '+sunk.name+' em '+coord(r,c)+'.','hit');
+      if(st.eScore>=TOTAL){finishGame(false);return;}
+    } else {
+      setMsg('ALERTA: inimigo acertou '+coord(r,c)+' e prepara novo disparo.','hit');
+    }
+    setTimeout(enemyAttack,DIFFICULTY[st.difficulty].chainDelay);
+  } else {
+    beep('miss');
+    markCell(document.getElementById('my-board'),r,c,'miss');
+    st.turn='player'; setTurnUI('player');
+    setMsg('Inimigo errou. Posição '+coord(r,c)+' segura. Seu turno.','miss');
+  }
+}
+function finishGame(won){
+  st.over=true; gs.total++;
+  if(won){gs.wins++;gs.streak++;gs.bestStreak=Math.max(gs.bestStreak,gs.streak);beep('win');setMsg('MISSÃO CUMPRIDA. Toda a frota inimiga foi destruída em '+st.shots+' disparos.','win');setTurnUI('win');}
+  else{gs.streak=0;beep('lose');setMsg('DERROTA. Sua frota foi destruída. Reagrupe e inicie nova batalha.','lose');setTurnUI('lose');}
+  updateStats();
+}
+
+function scanSector(){
+  if(st.over)return;
+  if(st.turn!=='player'){setMsg('Radar indisponível durante o ataque inimigo.','warn');return;}
+  if(st.scans<=0){setMsg('Radar esgotado nesta batalha.','warn');return;}
+  const hidden=[];
+  for(let r=0;r<10;r++)for(let c=0;c<10;c++)if(!st.eHits[r][c])hidden.push([r,c]);
+  const target=hidden[rand(hidden.length)];
+  const [cr,cc]=target;
+  const cells=[];
+  for(let r=cr-1;r<=cr+1;r++)for(let c=cc-1;c<=cc+1;c++)if(inBounds(r,c)&&!st.eHits[r][c])cells.push([r,c]);
+  const hasShip=cells.some(([r,c])=>st.eGrid[r][c]!==0);
+  const eb=document.getElementById('enemy-board');
+  cells.forEach(([r,c])=>getCell(eb,r,c).classList.add('scan'));
+  st.scans--; updateScanUI(); beep('scan');
+  setMsg('Radar varreu setor próximo de '+coord(cr,cc)+': '+(hasShip?'eco metálico detectado.':'nenhum sinal forte.'),'warn');
+  setTimeout(()=>cells.forEach(([r,c])=>getCell(eb,r,c).classList.remove('scan')),1800);
+}
+function updateScanUI(){
+  document.getElementById('scan-count').textContent=st.scans;
+  document.getElementById('scan-btn').disabled=st.scans<=0;
+}
+function changeDifficulty(){
+  const v=document.getElementById('difficulty').value;
+  document.getElementById('ai-label').textContent=DIFFICULTY[v].label;
+  initGame();
+}
+function toggleSound(){
+  soundOn=!soundOn;
+  document.getElementById('sound-btn').textContent='SOM: '+(soundOn?'ON':'OFF');
+}
+function resetStats(){
+  gs={total:0,wins:0,shots:0,hits:0,streak:0,bestStreak:0};
+  saveStats(); updateStats();
+  setMsg('Estatísticas zeradas com sucesso.','warn');
+}
+function showHelp(){document.getElementById('help-modal').classList.add('show');}
+function closeHelp(){document.getElementById('help-modal').classList.remove('show');}
+function hideHelp(ev){if(ev.target.id==='help-modal')closeHelp();}
+
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape')closeHelp();});
+
+function initGame(){
+  const eg=makeShipGrid(),mg=makeShipGrid();
+  const eS=place(eg,SHIP_DEFS),mS=place(mg,SHIP_DEFS);
+  const diff=document.getElementById('difficulty')?.value||'oficial';
+  st={eGrid:eg,myGrid:mg,eShips:eS,myShips:mS,eHits:makeGrid(),myHits:makeGrid(),pScore:0,eScore:0,turn:'player',over:false,aiQ:[],difficulty:diff,scans:DIFFICULTY[diff].scan,shots:0};
+  buildBoard(document.getElementById('enemy-board'),eg,true);
+  buildBoard(document.getElementById('my-board'),mg,false);
+  document.getElementById('ai-label').textContent=DIFFICULTY[diff].label;
+  updateFleet(); updateScanUI();
+  document.getElementById('phits').textContent='0';
+  document.getElementById('ehits').textContent='0';
+  setTurnUI('player'); updateStats();
+  setMsg('Selecione uma célula no tabuleiro inimigo para atacar.');
+}
+
+initGame();
+updateStats();
+</script>
+</body>
+</html>
